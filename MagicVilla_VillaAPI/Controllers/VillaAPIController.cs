@@ -16,8 +16,11 @@ namespace MagicVilla_VillaAPI.Controllers
     [ApiController]
     public class VillaAPIController : ControllerBase
     {
-        //add verb 
 
+      
+
+
+        //add verb 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
 
