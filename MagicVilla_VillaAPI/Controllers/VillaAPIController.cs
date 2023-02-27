@@ -42,12 +42,21 @@ namespace MagicVilla_VillaAPI.Controllers
         {
             // return Ok(VillaStore.villaList);
             // villaStore to make it read from on-the-fly db
-            // return Ok(await(_db.Villas.ToListAsync()) );   --> without mapper    
-            IEnumerable<Villa> villaList = await _dbVilla.GetAllAsync();
-            _response.Result = _mapper.Map<List<VillaDTO>>(villaList);
-            _response.StatusCode = HttpStatusCode.OK; 
-            return Ok(_response);
-        }
+            // return Ok(await(_db.Villas.ToListAsync()) );   --> without mapper
+            
+            try
+            {
+                IEnumerable<Villa> villaList = await _dbVilla.GetAllAsync();
+                _response.Result = _mapper.Map<List<VillaDTO>>(villaList);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch(Exception ex) { 
+                _response.IsSuccess= false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
+            }
+            return _response;        }
 
 
 
@@ -59,23 +68,32 @@ namespace MagicVilla_VillaAPI.Controllers
         // [ProducesResponseType(200 , Type = typeof(VillaDTO)]
         public async Task<ActionResult<APIResponse>> GetVilla(int id)
         {
-
-            if (id == 0)
+            try
             {
-                return BadRequest();
+                if (id == 0)
+                {
+                    return BadRequest();
+                }
+                //var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+                var villa = await _dbVilla.GetAsync(x => x.Id == id);
+
+
+                if (villa == null)
+                {
+                    return NotFound();
+                }
+
+                _response.Result = _mapper.Map<VillaDTO>(villa);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
             }
-            //var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
-            var villa = await _dbVilla.GetAsync(x => x.Id == id);
-
-
-            if (villa == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                _response.IsSuccess = false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
             }
-
-            _response.Result = _mapper.Map<VillaDTO>(villa);
-            _response.StatusCode = HttpStatusCode.OK;
-            return Ok(_response);
+            return _response;
 
         }
 
@@ -89,48 +107,57 @@ namespace MagicVilla_VillaAPI.Controllers
 
         public async Task<ActionResult<APIResponse>> CreateVilla([FromBody] VillaCreateDTO createDTO)
         {
-
-            if (await _dbVilla.GetAsync(u => u.Name.ToLower() == createDTO.Name.ToLower()) != null)
+            try
             {
-                ModelState.AddModelError("", "Already Exists !");
-                return BadRequest(ModelState);
-                //validation errors that need to be returned to the client.
-                /*By passing ModelState to the BadRequest method, you are returning an HTTP 400 Bad Request
-                response to the client, along with a list of validation errors contained in the ModelState object.*/
+                if (await _dbVilla.GetAsync(u => u.Name.ToLower() == createDTO.Name.ToLower()) != null)
+                {
+                    ModelState.AddModelError("", "Already Exists !");
+                    return BadRequest(ModelState);
+                    //validation errors that need to be returned to the client.
+                    /*By passing ModelState to the BadRequest method, you are returning an HTTP 400 Bad Request
+                    response to the client, along with a list of validation errors contained in the ModelState object.*/
+                }
+                if (createDTO == null)
+                {
+                    return BadRequest(createDTO);
+                }
+                //if (villaDTO.Id > 0)
+                //{
+                //    return StatusCode(StatusCodes.Status500InternalServerError);
+                //}
+                //villaDTO.Id = _db.Villas.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
+
+                //VillaStore.villaList.Add(villaDTO);
+
+                Villa villa = _mapper.Map<Villa>(createDTO);
+                //line Villa model = _mapper.Map<Villa>(createDTO); is insted of the following piece if code --> 
+                //Villa model = new()
+                //{
+                //    Name = createDTO.Name,
+                //    //Id = villaDTO.Id,
+                //    ImageUrl = createDTO.ImageUrl,
+                //    Location = createDTO.Location,
+                //    sqft = createDTO.sqft,
+                //    Rate = createDTO.Rate,
+                //    Details = createDTO.Details,
+                //    CreatedDate = createDTO.CreatedDate,
+                //    UpdatedDate = createDTO.UpdatedDate,
+                //};
+
+                await _dbVilla.CreateAsync(villa);
+
+                _response.Result = _mapper.Map<VillaDTO>(villa);
+                _response.StatusCode = HttpStatusCode.Created;
+
+                return CreatedAtRoute("GetVilla", new { id = villa.Id }, villa);
             }
-            if (createDTO == null)
+            catch (Exception ex)
             {
-                return BadRequest(createDTO);
+                _response.IsSuccess = false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
             }
-            //if (villaDTO.Id > 0)
-            //{
-            //    return StatusCode(StatusCodes.Status500InternalServerError);
-            //}
-            //villaDTO.Id = _db.Villas.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
-
-            //VillaStore.villaList.Add(villaDTO);
-
-            Villa villa = _mapper.Map<Villa>(createDTO);
-            //line Villa model = _mapper.Map<Villa>(createDTO); is insted of the following piece if code --> 
-            //Villa model = new()
-            //{
-            //    Name = createDTO.Name,
-            //    //Id = villaDTO.Id,
-            //    ImageUrl = createDTO.ImageUrl,
-            //    Location = createDTO.Location,
-            //    sqft = createDTO.sqft,
-            //    Rate = createDTO.Rate,
-            //    Details = createDTO.Details,
-            //    CreatedDate = createDTO.CreatedDate,
-            //    UpdatedDate = createDTO.UpdatedDate,
-            //};
-
-            await _dbVilla.CreateAsync(villa);
-
-            _response.Result = _mapper.Map<VillaDTO>(villa);
-            _response.StatusCode = HttpStatusCode.Created;
-
-            return CreatedAtRoute("GetVilla", new { id = villa.Id }, villa);
+            return _response;
         }
 
 
@@ -145,21 +172,31 @@ namespace MagicVilla_VillaAPI.Controllers
         // ActionResult determine the type of return or what to return
         // IActionResult there is nothing to return 
         {
-            if (id == 0)
+            try
             {
-                return BadRequest();
+                if (id == 0)
+                {
+                    return BadRequest();
+                }
+                var villa = await _dbVilla.GetAsync(u => u.Id == id);
+                if (villa == null)
+                {
+                    return NotFound();
+                }
+                await _dbVilla.RemoveAsync(villa);
+
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+
+                return Ok(_response);
             }
-            var villa =await _dbVilla.GetAsync(u => u.Id == id);
-            if (villa == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                _response.IsSuccess = false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
             }
-            await _dbVilla.RemoveAsync(villa);
-
-            _response.StatusCode = HttpStatusCode.NoContent;
-            _response.IsSuccess= true;
-
-            return Ok(_response);
+            return _response;
         }
 
 
@@ -170,20 +207,30 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> UpdateVilla(int id, [FromBody] VillaUpdateDTO updateDTO)
         {
-            if (updateDTO == null || id != updateDTO.Id)
+            try
             {
-                return BadRequest();
+                if (updateDTO == null || id != updateDTO.Id)
+                {
+                    return BadRequest();
+                }
+                Villa villa = _mapper.Map<Villa>(updateDTO);
+
+                await _dbVilla.UpdateAsync(villa);
+                //await _dbVilla.SaveAsync();
+
+
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+
+                return Ok(_response);
             }
-            Villa villa = _mapper.Map<Villa>(updateDTO);
-
-            await _dbVilla.UpdateAsync(villa);
-            //await _dbVilla.SaveAsync();
-
-
-            _response.StatusCode = HttpStatusCode.NoContent;
-            _response.IsSuccess = true;
-
-            return Ok(_response);
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
+            }
+            return _response;
         }
 
 
@@ -196,35 +243,45 @@ namespace MagicVilla_VillaAPI.Controllers
         public async Task<ActionResult<APIResponse>>  PatchVilla (int id , JsonPatchDocument<VillaUpdateDTO> patchDto ) //called it patchDto
             //patchDto is a json patch document
         {
-            if (patchDto == null || id == 0)
+            try
             {
-                return BadRequest();
+                if (patchDto == null || id == 0)
+                {
+                    return BadRequest();
+                }
+                var villa = await _dbVilla.GetAsync(x => x.Id == id);
+
+
+                VillaUpdateDTO villaDTO = _mapper.Map<VillaUpdateDTO>(villa);
+
+                if (villa == null)
+                {
+                    return BadRequest();
+                }
+                patchDto.ApplyTo(villaDTO, ModelState);
+                // scince it an json patch document we can use apply to and apply the things in that in villa object
+                //we use Model state to noyify that if there is and edit apply that to the object 
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                Villa model = _mapper.Map<Villa>(villaDTO);
+
+                await _dbVilla.UpdateAsync(model);
+
+                _response.Result = model;
+                _response.StatusCode = HttpStatusCode.NoContent;
+
+                return Ok(_response);
             }
-            var villa = await _dbVilla.GetAsync(x => x.Id == id);
-
-
-            VillaUpdateDTO villaDTO =_mapper.Map<VillaUpdateDTO>(villa);
-
-            if (villa == null)
+            catch (Exception ex)
             {
-                return BadRequest();
+                _response.IsSuccess = false;
+                _response.ErrorMessage
+                    = new List<string> { ex.Message };
             }
-            patchDto.ApplyTo(villaDTO, ModelState);
-            // scince it an json patch document we can use apply to and apply the things in that in villa object
-            //we use Model state to noyify that if there is and edit apply that to the object 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            Villa model = _mapper.Map<Villa>(villaDTO);
-
-            await _dbVilla.UpdateAsync(model);
-
-            _response.Result = model; 
-            _response.StatusCode = HttpStatusCode.NoContent;
-
-            return Ok(_response);
+            return _response;
 
 
         }
