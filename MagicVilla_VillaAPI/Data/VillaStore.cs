@@ -1,4 +1,4 @@
-﻿using MagicVilla_VillaAPI.Models.Dto;
+﻿ using MagicVilla_VillaAPI.Models.Dto;
 
 namespace MagicVilla_VillaAPI.Data
 {
@@ -10,7 +10,7 @@ namespace MagicVilla_VillaAPI.Data
                 new VillaDTO {Id = 2 ,Name = "Beach View "  , Location = "salt" , sqft = 5} ,
                 new VillaDTO { Id = 3, Name = "River View"   , Location = "salt" , sqft = 2.5f}
             };
-    }
+    }  
 }
 
 
