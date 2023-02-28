@@ -17,6 +17,7 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped< IVillaRepositry , VillaRepositry > ();
+builder.Services.AddScoped <IVillaNoRepositry , VillaNoRepositry> ();
 
 //config thr EF to the .net app
 builder.Services.AddDbContext<AppDBContext>(option =>

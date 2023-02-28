@@ -1,10 +1,7 @@
 ﻿using MagicVilla_VillaAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using MagicVilla_VillaAPI.Models.Dto;
-using MagicVilla_VillaAPI.Data;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using MagicVilla_VillaAPI.Repositry.IRepositry;
 using System.Net;
@@ -20,7 +17,6 @@ namespace MagicVilla_VillaAPI.Controllers
     [ApiController]
     public class VillaAPIController : ControllerBase
     {
-
 
         private readonly IVillaRepositry _dbVilla;
         private readonly IMapper _mapper ;
@@ -56,7 +52,8 @@ namespace MagicVilla_VillaAPI.Controllers
                 _response.ErrorMessage
                     = new List<string> { ex.Message };
             }
-            return _response;        }
+            return _response;        
+        }
 
 
 
@@ -212,6 +209,11 @@ namespace MagicVilla_VillaAPI.Controllers
                 if (updateDTO == null || id != updateDTO.Id)
                 {
                     return BadRequest();
+                }
+                var model = await _dbVilla.GetAsync(u => u.Id == id);
+                if (model == null)
+                {
+                    return NotFound();
                 }
                 Villa villa = _mapper.Map<Villa>(updateDTO);
 

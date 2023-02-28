@@ -13,5 +13,7 @@ namespace MagicVilla_VillaAPI.Data
         public DbSet<Villa> Villas { get; set; }
         //Villas here is the name that will be given to sql server
 
+        public DbSet<VillaNumber> VillaNumbers { get; set; }
+
     }
 }
